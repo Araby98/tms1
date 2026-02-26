@@ -5,7 +5,9 @@ import { getCurrentUser } from "@/lib/storage";
 const Index = () => {
   const navigate = useNavigate();
   useEffect(() => {
-    navigate(getCurrentUser() ? "/dashboard" : "/login");
+    if (getCurrentUser()) {
+      navigate("/dashboard", { replace: true });
+    }
   }, [navigate]);
   return null;
 };
