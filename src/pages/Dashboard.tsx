@@ -1,8 +1,8 @@
 import { useAuth } from "@/contexts/AuthContext";
-import { getTransfers, getUsers } from "@/lib/storage";
+import { getTransfers, getUsers, getWishes } from "@/lib/storage";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeftRight, RotateCw, Users, Clock } from "lucide-react";
+import { ArrowLeftRight, RotateCw, Users, Clock, ArrowRight } from "lucide-react";
 
 const statusLabel: Record<string, string> = {
   pending: "En attente",
@@ -20,10 +20,13 @@ const Dashboard = () => {
   const { user } = useAuth();
   const transfers = getTransfers();
   const users = getUsers();
+  const wishes = getWishes();
+  const isAdmin = user?.role === "admin";
 
   const myTransfers = transfers.filter((t) =>
     t.participants.some((p) => p.userId === user?.id)
   );
+  const myWishes = wishes.filter((w) => w.userId === user?.id);
 
   const getUserName = (id: string) => {
     const u = users.find((u) => u.id === id);
@@ -37,52 +40,89 @@ const Dashboard = () => {
         <p className="text-muted-foreground">Province: {user?.fromProvince} · Grade: {user?.grade}</p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Card>
-          <CardContent className="flex items-center gap-4 pt-6">
-            <div className="p-3 rounded-lg bg-primary/10">
-              <Users className="h-6 w-6 text-primary" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold">{users.length}</p>
-              <p className="text-sm text-muted-foreground">Utilisateurs</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="flex items-center gap-4 pt-6">
-            <div className="p-3 rounded-lg bg-secondary/30">
-              <ArrowLeftRight className="h-6 w-6 text-secondary-foreground" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold">{transfers.filter((t) => t.type === "mutual").length}</p>
-              <p className="text-sm text-muted-foreground">Mutations mutuelles</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="flex items-center gap-4 pt-6">
-            <div className="p-3 rounded-lg bg-secondary/30">
-              <RotateCw className="h-6 w-6 text-secondary-foreground" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold">{transfers.filter((t) => t.type === "cycle").length}</p>
-              <p className="text-sm text-muted-foreground">Mutations cycliques</p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      {/* Admin-only analytics */}
+      {isAdmin && (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <Card>
+            <CardContent className="flex items-center gap-4 pt-6">
+              <div className="p-3 rounded-lg bg-primary/10">
+                <Users className="h-6 w-6 text-primary" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">{users.length}</p>
+                <p className="text-sm text-muted-foreground">Utilisateurs</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="flex items-center gap-4 pt-6">
+              <div className="p-3 rounded-lg bg-secondary/30">
+                <ArrowLeftRight className="h-6 w-6 text-secondary-foreground" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">{transfers.filter((t) => t.type === "mutual").length}</p>
+                <p className="text-sm text-muted-foreground">Mutations mutuelles</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="flex items-center gap-4 pt-6">
+              <div className="p-3 rounded-lg bg-secondary/30">
+                <RotateCw className="h-6 w-6 text-secondary-foreground" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">{transfers.filter((t) => t.type === "cycle").length}</p>
+                <p className="text-sm text-muted-foreground">Mutations cycliques</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
+      {/* User's own wishes */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Clock className="h-5 w-5" /> Mes demandes
+            <ArrowRight className="h-5 w-5" /> Mes demandes
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {myTransfers.length === 0 ? (
+          {myWishes.length === 0 ? (
             <p className="text-muted-foreground text-sm">Aucune demande pour le moment.</p>
           ) : (
+            <div className="space-y-3">
+              {myWishes.map((w) => (
+                <div key={w.id} className="flex items-center justify-between p-3 rounded-lg border">
+                  <div className="flex items-center gap-3">
+                    <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                    <div>
+                      <p className="text-sm font-medium">{w.fromProvince} → {w.toProvince}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(w.createdAt).toLocaleDateString("fr-FR")}
+                      </p>
+                    </div>
+                  </div>
+                  {w.matchedTransferId ? (
+                    <Badge variant="default">Matchée</Badge>
+                  ) : (
+                    <Badge variant="outline">En attente</Badge>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Matched transfers */}
+      {myTransfers.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Clock className="h-5 w-5" /> Mes mutations
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
             <div className="space-y-3">
               {myTransfers.map((t) => (
                 <div key={t.id} className="flex items-center justify-between p-3 rounded-lg border">
@@ -105,9 +145,9 @@ const Dashboard = () => {
                 </div>
               ))}
             </div>
-          )}
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };
