@@ -2,11 +2,12 @@ import { ReactNode } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { LayoutDashboard, Send, LogOut, User, Users } from "lucide-react";
+import { LayoutDashboard, Send, LogOut, User, Users, UserCog } from "lucide-react";
 
 const navItems = [
   { to: "/dashboard", label: "Tableau de bord", icon: LayoutDashboard },
   { to: "/transfer-request", label: "Demande de mutation", icon: Send },
+  { to: "/profile", label: "Mon profil", icon: UserCog },
 ];
 
 const adminNavItems = [

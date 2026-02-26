@@ -10,6 +10,7 @@ import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import Dashboard from "./pages/Dashboard";
 import TransferRequest from "./pages/TransferRequest";
+import Profile from "./pages/Profile";
 import UsersList from "./pages/UsersList";
 import NotFound from "./pages/NotFound";
 import { ReactNode } from "react";
@@ -42,6 +43,7 @@ const App = () => (
             <Route path="/signup" element={<Signup />} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/transfer-request" element={<ProtectedRoute><TransferRequest /></ProtectedRoute>} />
+            <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
             <Route path="/users" element={<AdminRoute><UsersList /></AdminRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
