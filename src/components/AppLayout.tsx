@@ -2,17 +2,24 @@ import { ReactNode } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { LayoutDashboard, Send, LogOut, User } from "lucide-react";
+import { LayoutDashboard, Send, LogOut, User, Users } from "lucide-react";
 
 const navItems = [
   { to: "/dashboard", label: "Tableau de bord", icon: LayoutDashboard },
   { to: "/transfer-request", label: "Demande de mutation", icon: Send },
 ];
 
+const adminNavItems = [
+  { to: "/users", label: "Utilisateurs", icon: Users },
+];
+
 export const AppLayout = ({ children }: { children: ReactNode }) => {
   const { user, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+  const isAdmin = user?.role === "admin";
+
+  const allNavItems = [...navItems, ...(isAdmin ? adminNavItems : [])];
 
   const handleLogout = () => {
     logout();
@@ -47,7 +54,7 @@ export const AppLayout = ({ children }: { children: ReactNode }) => {
 
       <div className="flex flex-1">
         <nav className="hidden md:flex w-60 flex-col bg-card border-r p-4 gap-1">
-          {navItems.map((item) => {
+          {allNavItems.map((item) => {
             const active = location.pathname === item.to;
             return (
               <Link
@@ -67,7 +74,7 @@ export const AppLayout = ({ children }: { children: ReactNode }) => {
         </nav>
 
         <div className="md:hidden fixed bottom-0 left-0 right-0 bg-card border-t flex z-50">
-          {navItems.map((item) => {
+          {allNavItems.map((item) => {
             const active = location.pathname === item.to;
             return (
               <Link
