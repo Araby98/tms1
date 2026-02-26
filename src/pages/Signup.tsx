@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Grade } from "@/lib/types";
-import { PROVINCES } from "@/lib/provinces";
+import { REGIONS, getProvincesByRegion } from "@/lib/provinces";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,14 +17,17 @@ const Signup = () => {
     email: "",
     password: "",
     grade: "" as Grade,
+    region: "",
     fromProvince: "",
   });
   const { signup } = useAuth();
   const navigate = useNavigate();
 
+  const availableProvinces = form.region ? getProvincesByRegion(form.region) : [];
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.grade || !form.fromProvince) {
+    if (!form.grade || !form.region || !form.fromProvince) {
       toast.error("Veuillez remplir tous les champs");
       return;
     }
@@ -37,7 +40,13 @@ const Signup = () => {
     }
   };
 
-  const update = (field: string, value: string) => setForm((prev) => ({ ...prev, [field]: value }));
+  const update = (field: string, value: string) => {
+    setForm((prev) => {
+      const next = { ...prev, [field]: value };
+      if (field === "region") next.fromProvince = "";
+      return next;
+    });
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-muted p-4">
@@ -79,11 +88,22 @@ const Signup = () => {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Province d'origine</Label>
-              <Select value={form.fromProvince} onValueChange={(v) => update("fromProvince", v)}>
-                <SelectTrigger><SelectValue placeholder="Sélectionner la province" /></SelectTrigger>
+              <Label>Région</Label>
+              <Select value={form.region} onValueChange={(v) => update("region", v)}>
+                <SelectTrigger><SelectValue placeholder="Sélectionner la région" /></SelectTrigger>
                 <SelectContent>
-                  {PROVINCES.map((p) => (
+                  {REGIONS.map((r) => (
+                    <SelectItem key={r} value={r}>{r}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Province d'origine</Label>
+              <Select value={form.fromProvince} onValueChange={(v) => update("fromProvince", v)} disabled={!form.region}>
+                <SelectTrigger><SelectValue placeholder={form.region ? "Sélectionner la province" : "Choisir d'abord une région"} /></SelectTrigger>
+                <SelectContent>
+                  {availableProvinces.map((p) => (
                     <SelectItem key={p} value={p}>{p}</SelectItem>
                   ))}
                 </SelectContent>

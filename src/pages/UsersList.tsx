@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { getUsers, getWishes } from "@/lib/storage";
-import { PROVINCES } from "@/lib/provinces";
+import { PROVINCES, REGIONS } from "@/lib/provinces";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -14,10 +14,10 @@ const UsersList = () => {
   const wishes = getWishes();
 
   const [gradeFilter, setGradeFilter] = useState("all");
+  const [regionFilter, setRegionFilter] = useState("all");
   const [originFilter, setOriginFilter] = useState("all");
   const [destFilter, setDestFilter] = useState("all");
 
-  // Build a map: userId → list of destination provinces
   const userDestinations = useMemo(() => {
     const map: Record<string, string[]> = {};
     wishes.forEach((w) => {
@@ -32,6 +32,7 @@ const UsersList = () => {
   const filtered = useMemo(() => {
     return users.filter((u) => {
       if (gradeFilter !== "all" && u.grade !== gradeFilter) return false;
+      if (regionFilter !== "all" && u.region !== regionFilter) return false;
       if (originFilter !== "all" && u.fromProvince !== originFilter) return false;
       if (destFilter !== "all") {
         const dests = userDestinations[u.id] || [];
@@ -39,10 +40,11 @@ const UsersList = () => {
       }
       return true;
     });
-  }, [users, gradeFilter, originFilter, destFilter, userDestinations]);
+  }, [users, gradeFilter, regionFilter, originFilter, destFilter, userDestinations]);
 
   const resetFilters = () => {
     setGradeFilter("all");
+    setRegionFilter("all");
     setOriginFilter("all");
     setDestFilter("all");
   };
@@ -58,7 +60,6 @@ const UsersList = () => {
         </p>
       </div>
 
-      {/* Filters */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
@@ -66,7 +67,7 @@ const UsersList = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="space-y-2">
               <Label>Grade</Label>
               <Select value={gradeFilter} onValueChange={setGradeFilter}>
@@ -75,6 +76,18 @@ const UsersList = () => {
                   <SelectItem value="all">Tous</SelectItem>
                   <SelectItem value="administrateur">Administrateur</SelectItem>
                   <SelectItem value="technicien">Technicien</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Région</Label>
+              <Select value={regionFilter} onValueChange={setRegionFilter}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Toutes</SelectItem>
+                  {REGIONS.map((r) => (
+                    <SelectItem key={r} value={r}>{r}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -109,7 +122,6 @@ const UsersList = () => {
         </CardContent>
       </Card>
 
-      {/* Table */}
       <Card>
         <CardContent className="p-0">
           <Table>
@@ -118,6 +130,7 @@ const UsersList = () => {
                 <TableHead>Nom</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Grade</TableHead>
+                <TableHead>Région</TableHead>
                 <TableHead>Province d'origine</TableHead>
                 <TableHead>Destinations souhaitées</TableHead>
               </TableRow>
@@ -125,7 +138,7 @@ const UsersList = () => {
             <TableBody>
               {filtered.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                  <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
                     Aucun utilisateur trouvé
                   </TableCell>
                 </TableRow>
@@ -137,6 +150,7 @@ const UsersList = () => {
                     <TableCell>
                       <Badge variant="secondary">{u.grade}</Badge>
                     </TableCell>
+                    <TableCell>{u.region}</TableCell>
                     <TableCell>{u.fromProvince}</TableCell>
                     <TableCell>
                       <div className="flex flex-wrap gap-1">
