@@ -8,6 +8,7 @@ export interface User {
   email: string;
   password: string;
   grade: Grade;
+  region: string;
   fromProvince: string;
   role: UserRole;
 }
