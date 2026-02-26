@@ -1,9 +1,10 @@
-import { User, TransferRequest, TransferWish } from "./types";
+import { User, TransferRequest, TransferWish, Notification } from "./types";
 
 const USERS_KEY = "movement_users";
 const CURRENT_USER_KEY = "movement_current_user";
 const TRANSFERS_KEY = "movement_transfers";
 const WISHES_KEY = "movement_wishes";
+const NOTIFICATIONS_KEY = "movement_notifications";
 
 // ── Users ──
 export const getUsers = (): User[] => {
@@ -76,17 +77,54 @@ export const updateWish = (id: string, updates: Partial<TransferWish>): void => 
   }
 };
 
+export const deleteWish = (id: string): void => {
+  const wishes = getWishes().filter((w) => w.id !== id);
+  localStorage.setItem(WISHES_KEY, JSON.stringify(wishes));
+};
+
 export const hasExistingWish = (userId: string, fromProvince: string, toProvince: string): boolean => {
   return getWishes().some(
     (w) => w.userId === userId && w.fromProvince === fromProvince && w.toProvince === toProvince && !w.matchedTransferId
   );
 };
 
+// ── Users update ──
+export const updateUser = (id: string, updates: Partial<User>): void => {
+  const users = getUsers();
+  const idx = users.findIndex((u) => u.id === id);
+  if (idx !== -1) {
+    users[idx] = { ...users[idx], ...updates };
+    localStorage.setItem(USERS_KEY, JSON.stringify(users));
+  }
+};
+
+// ── Notifications ──
+export const getNotifications = (): Notification[] => {
+  const data = localStorage.getItem(NOTIFICATIONS_KEY);
+  return data ? JSON.parse(data) : [];
+};
+
+export const saveNotification = (notification: Notification): void => {
+  const notifications = getNotifications();
+  notifications.push(notification);
+  localStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify(notifications));
+};
+
+export const getUnreadNotifications = (userId: string): Notification[] => {
+  return getNotifications().filter((n) => n.userId === userId && !n.read);
+};
+
+export const markNotificationsRead = (userId: string): void => {
+  const notifications = getNotifications().map((n) =>
+    n.userId === userId ? { ...n, read: true } : n
+  );
+  localStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify(notifications));
+};
+
 // ── Auto-matching ──
 export const tryAutoMatch = (newWish: TransferWish): TransferRequest | null => {
   const wishes = getWishes().filter((w) => !w.matchedTransferId && w.id !== newWish.id);
 
-  // Try mutual match: someone wants the exact reverse
   const mutualMatch = wishes.find(
     (w) => w.fromProvince === newWish.toProvince && w.toProvince === newWish.fromProvince
   );
@@ -105,12 +143,17 @@ export const tryAutoMatch = (newWish: TransferWish): TransferRequest | null => {
     saveTransfer(transfer);
     updateWish(newWish.id, { matchedTransferId: transfer.id });
     updateWish(mutualMatch.id, { matchedTransferId: transfer.id });
+
+    // Notify participants
+    const msg = "🎉 Mutation mutuelle détectée ! Vérifiez vos mutations dans le tableau de bord.";
+    saveNotification({ id: crypto.randomUUID(), userId: newWish.userId, message: msg, createdAt: new Date().toISOString(), read: false });
+    saveNotification({ id: crypto.randomUUID(), userId: mutualMatch.userId, message: msg, createdAt: new Date().toISOString(), read: false });
+
     return transfer;
   }
 
-  // Try cycle match: A→B, B→C, C→A
   for (const wishB of wishes) {
-    if (wishB.fromProvince !== newWish.toProvince) continue; // B starts where A wants to go
+    if (wishB.fromProvince !== newWish.toProvince) continue;
     const wishC = wishes.find(
       (w) =>
         w.id !== wishB.id &&
@@ -133,6 +176,12 @@ export const tryAutoMatch = (newWish: TransferWish): TransferRequest | null => {
       updateWish(newWish.id, { matchedTransferId: transfer.id });
       updateWish(wishB.id, { matchedTransferId: transfer.id });
       updateWish(wishC.id, { matchedTransferId: transfer.id });
+
+      const msg = "🎉 Mutation cyclique détectée ! Vérifiez vos mutations dans le tableau de bord.";
+      saveNotification({ id: crypto.randomUUID(), userId: newWish.userId, message: msg, createdAt: new Date().toISOString(), read: false });
+      saveNotification({ id: crypto.randomUUID(), userId: wishB.userId, message: msg, createdAt: new Date().toISOString(), read: false });
+      saveNotification({ id: crypto.randomUUID(), userId: wishC.userId, message: msg, createdAt: new Date().toISOString(), read: false });
+
       return transfer;
     }
   }
