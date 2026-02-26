@@ -5,7 +5,7 @@ import { getCurrentUser, setCurrentUser, findUserByEmail, saveUser } from "@/lib
 interface AuthContextType {
   user: User | null;
   login: (email: string, password: string) => { success: boolean; error?: string };
-  signup: (userData: Omit<User, "id">) => { success: boolean; error?: string };
+  signup: (userData: Omit<User, "id" | "role">) => { success: boolean; error?: string };
   logout: () => void;
 }
 
@@ -27,11 +27,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return { success: true };
   };
 
-  const signup = (userData: Omit<User, "id">) => {
+  const signup = (userData: Omit<User, "id" | "role">) => {
     if (findUserByEmail(userData.email)) {
       return { success: false, error: "Cet email est déjà utilisé" };
     }
-    const newUser: User = { ...userData, id: crypto.randomUUID() };
+    const newUser: User = { ...userData, id: crypto.randomUUID(), role: "user" };
     saveUser(newUser);
     setUser(newUser);
     setCurrentUser(newUser);

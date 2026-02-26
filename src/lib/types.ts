@@ -1,4 +1,5 @@
 export type Grade = "administrateur" | "technicien";
+export type UserRole = "user" | "admin";
 
 export interface User {
   id: string;
@@ -8,10 +9,21 @@ export interface User {
   password: string;
   grade: Grade;
   fromProvince: string;
+  role: UserRole;
 }
 
 export type TransferType = "mutual" | "cycle";
 export type TransferStatus = "pending" | "approved" | "rejected";
+
+// Individual wish: "I want to move from A to B"
+export interface TransferWish {
+  id: string;
+  userId: string;
+  fromProvince: string;
+  toProvince: string;
+  createdAt: string;
+  matchedTransferId?: string; // linked when auto-matched
+}
 
 export interface TransferRequest {
   id: string;

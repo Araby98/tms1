@@ -9,8 +9,7 @@ import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import Dashboard from "./pages/Dashboard";
-import MutualTransfer from "./pages/MutualTransfer";
-import CycleTransfer from "./pages/CycleTransfer";
+import TransferRequest from "./pages/TransferRequest";
 import NotFound from "./pages/NotFound";
 import { ReactNode } from "react";
 
@@ -34,8 +33,7 @@ const App = () => (
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-            <Route path="/mutual-transfer" element={<ProtectedRoute><MutualTransfer /></ProtectedRoute>} />
-            <Route path="/cycle-transfer" element={<ProtectedRoute><CycleTransfer /></ProtectedRoute>} />
+            <Route path="/transfer-request" element={<ProtectedRoute><TransferRequest /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>

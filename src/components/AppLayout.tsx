@@ -2,12 +2,11 @@ import { ReactNode } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { LayoutDashboard, ArrowLeftRight, RotateCw, LogOut, User } from "lucide-react";
+import { LayoutDashboard, Send, LogOut, User } from "lucide-react";
 
 const navItems = [
   { to: "/dashboard", label: "Tableau de bord", icon: LayoutDashboard },
-  { to: "/mutual-transfer", label: "Mutation mutuelle", icon: ArrowLeftRight },
-  { to: "/cycle-transfer", label: "Mutation cyclique", icon: RotateCw },
+  { to: "/transfer-request", label: "Demande de mutation", icon: Send },
 ];
 
 export const AppLayout = ({ children }: { children: ReactNode }) => {
@@ -67,7 +66,6 @@ export const AppLayout = ({ children }: { children: ReactNode }) => {
           })}
         </nav>
 
-        {/* Mobile nav */}
         <div className="md:hidden fixed bottom-0 left-0 right-0 bg-card border-t flex z-50">
           {navItems.map((item) => {
             const active = location.pathname === item.to;
