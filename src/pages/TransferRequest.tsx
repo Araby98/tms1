@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLang } from "@/contexts/LanguageContext";
 import { getWishes, saveWish, hasExistingWish, tryAutoMatch, deleteWish, updateWish } from "@/lib/storage";
 import { PROVINCES } from "@/lib/provinces";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,6 +13,7 @@ import { Send, ArrowRight, ArrowLeftRight, Trash2, Edit2, X, Check } from "lucid
 
 const TransferRequest = () => {
   const { user } = useAuth();
+  const { t } = useLang();
   const [toProvince, setToProvince] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editProvince, setEditProvince] = useState("");
@@ -21,18 +23,9 @@ const TransferRequest = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!toProvince) {
-      toast.error("Veuillez sélectionner une province de destination");
-      return;
-    }
-    if (toProvince === user?.fromProvince) {
-      toast.error("La destination doit être différente de votre province actuelle");
-      return;
-    }
-    if (hasExistingWish(user!.id, user!.fromProvince, toProvince)) {
-      toast.error("Vous avez déjà une demande identique en cours");
-      return;
-    }
+    if (!toProvince) return;
+    if (toProvince === user?.fromProvince) return;
+    if (hasExistingWish(user!.id, user!.fromProvince, toProvince)) return;
 
     const wish = {
       id: crypto.randomUUID(),
@@ -45,13 +38,9 @@ const TransferRequest = () => {
 
     const match = tryAutoMatch(wish);
     if (match) {
-      toast.success(
-        match.type === "mutual"
-          ? "🎉 Mutation mutuelle détectée automatiquement !"
-          : "🎉 Mutation cyclique détectée automatiquement !"
-      );
+      toast.success(match.type === "mutual" ? "🎉 Mutation mutuelle détectée !" : "🎉 Mutation cyclique détectée !");
     } else {
-      toast.success("Demande enregistrée. Un match sera détecté automatiquement.");
+      toast.success(t("dash.pending"));
     }
     setToProvince("");
     forceUpdate((n) => n + 1);
@@ -59,27 +48,14 @@ const TransferRequest = () => {
 
   const handleDelete = (id: string) => {
     deleteWish(id);
-    toast.success("Demande supprimée");
     forceUpdate((n) => n + 1);
   };
 
-  const handleEdit = (wishId: string, currentTo: string) => {
-    setEditingId(wishId);
-    setEditProvince(currentTo);
-  };
-
   const handleEditSave = (wishId: string, fromProvince: string) => {
-    if (!editProvince || editProvince === fromProvince) {
-      toast.error("Province de destination invalide");
-      return;
-    }
-    if (hasExistingWish(user!.id, fromProvince, editProvince)) {
-      toast.error("Vous avez déjà une demande identique en cours");
-      return;
-    }
+    if (!editProvince || editProvince === fromProvince) return;
+    if (hasExistingWish(user!.id, fromProvince, editProvince)) return;
     updateWish(wishId, { toProvince: editProvince });
     setEditingId(null);
-    toast.success("Demande modifiée");
     forceUpdate((n) => n + 1);
   };
 
@@ -87,27 +63,25 @@ const TransferRequest = () => {
     <div className="max-w-xl mx-auto space-y-6">
       <div>
         <h1 className="text-2xl font-bold flex items-center gap-2">
-          <Send className="h-6 w-6" /> Demande de mutation
+          <Send className="h-6 w-6" /> {t("transfer.title")}
         </h1>
-        <p className="text-muted-foreground">
-          Indiquez votre destination souhaitée. Les mutations mutuelles et cycliques seront détectées automatiquement.
-        </p>
+        <p className="text-muted-foreground">{t("transfer.subtitle")}</p>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Nouvelle demande</CardTitle>
+          <CardTitle>{t("transfer.new")}</CardTitle>
           <CardDescription>
-            Vous êtes actuellement à <strong>{user?.fromProvince}</strong>. Où souhaitez-vous aller ?
+            {t("transfer.current_at")} <strong>{user?.fromProvince}</strong>. {t("transfer.where")}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label>Province de destination</Label>
+              <Label>{t("transfer.dest")}</Label>
               <Select value={toProvince} onValueChange={setToProvince}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Sélectionner une province" />
+                  <SelectValue placeholder={t("transfer.select_province")} />
                 </SelectTrigger>
                 <SelectContent>
                   {PROVINCES.filter((p) => p !== user?.fromProvince).map((p) => (
@@ -117,7 +91,7 @@ const TransferRequest = () => {
               </Select>
             </div>
             <Button type="submit" className="w-full">
-              <Send className="h-4 w-4 mr-2" /> Soumettre
+              <Send className="h-4 w-4 me-2" /> {t("transfer.submit")}
             </Button>
           </form>
         </CardContent>
@@ -125,11 +99,11 @@ const TransferRequest = () => {
 
       <Card>
         <CardHeader>
-          <CardTitle>Mes demandes</CardTitle>
+          <CardTitle>{t("transfer.my_requests")}</CardTitle>
         </CardHeader>
         <CardContent>
           {myWishes.length === 0 ? (
-            <p className="text-muted-foreground text-sm">Aucune demande pour le moment.</p>
+            <p className="text-muted-foreground text-sm">{t("dash.no_requests")}</p>
           ) : (
             <div className="space-y-3">
               {myWishes.map((w) => (
@@ -170,14 +144,14 @@ const TransferRequest = () => {
                   <div className="flex items-center gap-2">
                     {w.matchedTransferId ? (
                       <Badge variant="default" className="flex items-center gap-1">
-                        <ArrowLeftRight className="h-3 w-3" /> Matchée
+                        <ArrowLeftRight className="h-3 w-3" /> {t("dash.matched")}
                       </Badge>
                     ) : (
                       <>
-                        <Badge variant="outline">En attente</Badge>
+                        <Badge variant="outline">{t("dash.pending")}</Badge>
                         {editingId !== w.id && (
                           <>
-                            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => handleEdit(w.id, w.toProvince)}>
+                            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { setEditingId(w.id); setEditProvince(w.toProvince); }}>
                               <Edit2 className="h-3.5 w-3.5" />
                             </Button>
                             <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => handleDelete(w.id)}>

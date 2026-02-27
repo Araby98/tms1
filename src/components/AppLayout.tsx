@@ -1,24 +1,27 @@
 import { ReactNode } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLang } from "@/contexts/LanguageContext";
 import { Button } from "@/components/ui/button";
-import { LayoutDashboard, Send, LogOut, User, Users, UserCog } from "lucide-react";
-
-const navItems = [
-  { to: "/dashboard", label: "Tableau de bord", icon: LayoutDashboard },
-  { to: "/transfer-request", label: "Demande de mutation", icon: Send },
-  { to: "/profile", label: "Mon profil", icon: UserCog },
-];
-
-const adminNavItems = [
-  { to: "/users", label: "Utilisateurs", icon: Users },
-];
+import { LayoutDashboard, Send, LogOut, User, Users, UserCog, ClipboardCheck, Languages } from "lucide-react";
 
 export const AppLayout = ({ children }: { children: ReactNode }) => {
   const { user, logout } = useAuth();
+  const { t, toggle, lang } = useLang();
   const location = useLocation();
   const navigate = useNavigate();
   const isAdmin = user?.role === "admin";
+
+  const navItems = [
+    { to: "/dashboard", label: t("nav.dashboard"), icon: LayoutDashboard },
+    { to: "/transfer-request", label: t("nav.transfer"), icon: Send },
+    { to: "/profile", label: t("nav.profile"), icon: UserCog },
+  ];
+
+  const adminNavItems = [
+    { to: "/users", label: t("nav.users"), icon: Users },
+    { to: "/approvals", label: t("nav.approvals"), icon: ClipboardCheck },
+  ];
 
   const allNavItems = [...navItems, ...(isAdmin ? adminNavItems : [])];
 
@@ -32,13 +35,22 @@ export const AppLayout = ({ children }: { children: ReactNode }) => {
       <header className="bg-primary text-primary-foreground shadow-lg">
         <div className="container flex items-center justify-between h-16">
           <Link to="/dashboard" className="text-xl font-bold tracking-tight">
-            <span className="text-secondary">Mouv</span>ement
+            <span className="text-secondary">{t("app.name.prefix")}</span>{t("app.name.suffix")}
           </Link>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={toggle}
+              className="text-primary-foreground hover:bg-primary/80 gap-1"
+            >
+              <Languages className="h-4 w-4" />
+              {lang === "fr" ? "العربية" : "Français"}
+            </Button>
             <div className="hidden md:flex items-center gap-1 text-sm">
               <User className="h-4 w-4" />
               <span>{user?.firstName} {user?.lastName}</span>
-              <span className="text-secondary font-medium ml-1">({user?.grade})</span>
+              <span className="text-secondary font-medium ms-1">({user?.grade})</span>
             </div>
             <Button
               variant="ghost"
@@ -46,15 +58,15 @@ export const AppLayout = ({ children }: { children: ReactNode }) => {
               onClick={handleLogout}
               className="text-primary-foreground hover:bg-primary/80"
             >
-              <LogOut className="h-4 w-4 mr-1" />
-              Déconnexion
+              <LogOut className="h-4 w-4 me-1" />
+              {t("auth.logout")}
             </Button>
           </div>
         </div>
       </header>
 
       <div className="flex flex-1">
-        <nav className="hidden md:flex w-60 flex-col bg-card border-r p-4 gap-1">
+        <nav className="hidden md:flex w-60 flex-col bg-card border-e p-4 gap-1">
           {allNavItems.map((item) => {
             const active = location.pathname === item.to;
             return (
