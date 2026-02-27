@@ -1,46 +1,47 @@
 import { useAuth } from "@/contexts/AuthContext";
+import { useLang } from "@/contexts/LanguageContext";
 import { getTransfers, getUsers, getWishes } from "@/lib/storage";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeftRight, RotateCw, Users, Clock, ArrowRight } from "lucide-react";
 
-const statusLabel: Record<string, string> = {
-  pending: "En attente",
-  approved: "Approuvée",
-  rejected: "Rejetée",
-};
-
-const statusVariant: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
-  pending: "outline",
-  approved: "default",
-  rejected: "destructive",
-};
-
 const Dashboard = () => {
   const { user } = useAuth();
+  const { t } = useLang();
   const transfers = getTransfers();
   const users = getUsers();
   const wishes = getWishes();
   const isAdmin = user?.role === "admin";
 
-  const myTransfers = transfers.filter((t) =>
-    t.participants.some((p) => p.userId === user?.id)
+  const myTransfers = transfers.filter((tr) =>
+    tr.participants.some((p) => p.userId === user?.id)
   );
   const myWishes = wishes.filter((w) => w.userId === user?.id);
 
   const getUserName = (id: string) => {
     const u = users.find((u) => u.id === id);
-    return u ? `${u.firstName} ${u.lastName}` : "Inconnu";
+    return u ? `${u.firstName} ${u.lastName}` : t("common.unknown");
+  };
+
+  const statusLabel: Record<string, string> = {
+    pending: t("dash.pending"),
+    approved: t("dash.approved"),
+    rejected: t("dash.rejected"),
+  };
+
+  const statusVariant: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
+    pending: "outline",
+    approved: "default",
+    rejected: "destructive",
   };
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Bienvenue, {user?.firstName}</h1>
-        <p className="text-muted-foreground">Province: {user?.fromProvince} · Grade: {user?.grade}</p>
+        <h1 className="text-2xl font-bold">{t("dash.welcome")} {user?.firstName}</h1>
+        <p className="text-muted-foreground">{t("dash.province")} {user?.fromProvince} · {t("dash.grade")} {user?.grade}</p>
       </div>
 
-      {/* Admin-only analytics */}
       {isAdmin && (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <Card>
@@ -50,7 +51,7 @@ const Dashboard = () => {
               </div>
               <div>
                 <p className="text-2xl font-bold">{users.length}</p>
-                <p className="text-sm text-muted-foreground">Utilisateurs</p>
+                <p className="text-sm text-muted-foreground">{t("dash.users_count")}</p>
               </div>
             </CardContent>
           </Card>
@@ -60,8 +61,8 @@ const Dashboard = () => {
                 <ArrowLeftRight className="h-6 w-6 text-secondary-foreground" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{transfers.filter((t) => t.type === "mutual").length}</p>
-                <p className="text-sm text-muted-foreground">Mutations mutuelles</p>
+                <p className="text-2xl font-bold">{transfers.filter((tr) => tr.type === "mutual").length}</p>
+                <p className="text-sm text-muted-foreground">{t("dash.mutual_count")}</p>
               </div>
             </CardContent>
           </Card>
@@ -71,24 +72,23 @@ const Dashboard = () => {
                 <RotateCw className="h-6 w-6 text-secondary-foreground" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{transfers.filter((t) => t.type === "cycle").length}</p>
-                <p className="text-sm text-muted-foreground">Mutations cycliques</p>
+                <p className="text-2xl font-bold">{transfers.filter((tr) => tr.type === "cycle").length}</p>
+                <p className="text-sm text-muted-foreground">{t("dash.cycle_count")}</p>
               </div>
             </CardContent>
           </Card>
         </div>
       )}
 
-      {/* User's own wishes */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <ArrowRight className="h-5 w-5" /> Mes demandes
+            <ArrowRight className="h-5 w-5" /> {t("dash.my_requests")}
           </CardTitle>
         </CardHeader>
         <CardContent>
           {myWishes.length === 0 ? (
-            <p className="text-muted-foreground text-sm">Aucune demande pour le moment.</p>
+            <p className="text-muted-foreground text-sm">{t("dash.no_requests")}</p>
           ) : (
             <div className="space-y-3">
               {myWishes.map((w) => (
@@ -103,9 +103,9 @@ const Dashboard = () => {
                     </div>
                   </div>
                   {w.matchedTransferId ? (
-                    <Badge variant="default">Matchée</Badge>
+                    <Badge variant="default">{t("dash.matched")}</Badge>
                   ) : (
-                    <Badge variant="outline">En attente</Badge>
+                    <Badge variant="outline">{t("dash.pending")}</Badge>
                   )}
                 </div>
               ))}
@@ -114,34 +114,33 @@ const Dashboard = () => {
         </CardContent>
       </Card>
 
-      {/* Matched transfers */}
       {myTransfers.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Clock className="h-5 w-5" /> Mes mutations
+              <Clock className="h-5 w-5" /> {t("dash.my_transfers")}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {myTransfers.map((t) => (
-                <div key={t.id} className="flex items-center justify-between p-3 rounded-lg border">
+              {myTransfers.map((tr) => (
+                <div key={tr.id} className="flex items-center justify-between p-3 rounded-lg border">
                   <div className="flex items-center gap-3">
-                    {t.type === "mutual" ? (
+                    {tr.type === "mutual" ? (
                       <ArrowLeftRight className="h-4 w-4 text-muted-foreground" />
                     ) : (
                       <RotateCw className="h-4 w-4 text-muted-foreground" />
                     )}
                     <div>
                       <p className="text-sm font-medium">
-                        {t.type === "mutual" ? "Mutation mutuelle" : "Mutation cyclique"}
+                        {tr.type === "mutual" ? t("dash.mutual") : t("dash.cycle")}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {t.participants.map((p) => `${getUserName(p.userId)} (${p.fromProvince} → ${p.toProvince})`).join(" · ")}
+                        {tr.participants.map((p) => `${getUserName(p.userId)} (${p.fromProvince} → ${p.toProvince})`).join(" · ")}
                       </p>
                     </div>
                   </div>
-                  <Badge variant={statusVariant[t.status]}>{statusLabel[t.status]}</Badge>
+                  <Badge variant={statusVariant[tr.status]}>{statusLabel[tr.status]}</Badge>
                 </div>
               ))}
             </div>
