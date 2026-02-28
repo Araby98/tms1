@@ -1,9 +1,11 @@
-import { ReactNode } from "react";
+import { ReactNode, useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLang } from "@/contexts/LanguageContext";
+import { getUnreadNotifications, markNotificationsRead } from "@/lib/storage";
 import { Button } from "@/components/ui/button";
-import { LayoutDashboard, Send, LogOut, User, Users, UserCog, ClipboardCheck, Languages } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { LayoutDashboard, Send, LogOut, User, Users, UserCog, ClipboardCheck, Languages, Bell } from "lucide-react";
 
 export const AppLayout = ({ children }: { children: ReactNode }) => {
   const { user, logout } = useAuth();
@@ -11,6 +13,21 @@ export const AppLayout = ({ children }: { children: ReactNode }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const isAdmin = user?.role === "admin";
+
+  const [unread, setUnread] = useState<ReturnType<typeof getUnreadNotifications>>([]);
+
+  useEffect(() => {
+    if (user) {
+      setUnread(getUnreadNotifications(user.id));
+    }
+  }, [user, location.pathname]);
+
+  const handleMarkRead = () => {
+    if (user) {
+      markNotificationsRead(user.id);
+      setUnread([]);
+    }
+  };
 
   const navItems = [
     { to: "/dashboard", label: t("nav.dashboard"), icon: LayoutDashboard },
@@ -38,6 +55,43 @@ export const AppLayout = ({ children }: { children: ReactNode }) => {
             <span className="text-secondary">{t("app.name.prefix")}</span>{t("app.name.suffix")}
           </Link>
           <div className="flex items-center gap-3">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-primary-foreground hover:bg-primary/80 relative"
+                >
+                  <Bell className="h-4 w-4" />
+                  {unread.length > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center">
+                      {unread.length}
+                    </span>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80 p-3" align="end">
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="text-sm font-semibold">{lang === "fr" ? "Notifications" : "الإشعارات"}</h4>
+                  {unread.length > 0 && (
+                    <Button variant="ghost" size="sm" className="text-xs h-6" onClick={handleMarkRead}>
+                      {lang === "fr" ? "Tout marquer lu" : "تعليم الكل كمقروء"}
+                    </Button>
+                  )}
+                </div>
+                {unread.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">{lang === "fr" ? "Aucune notification" : "لا توجد إشعارات"}</p>
+                ) : (
+                  <div className="space-y-2 max-h-60 overflow-y-auto">
+                    {unread.map((n) => (
+                      <div key={n.id} className="text-xs p-2 rounded-md bg-muted">
+                        {n.message}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </PopoverContent>
+            </Popover>
             <Button
               variant="ghost"
               size="sm"
