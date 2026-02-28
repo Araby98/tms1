@@ -24,7 +24,7 @@ const TransferApprovals = () => {
     const transfer = transfers.find((t) => t.id === id);
     if (transfer) {
       const msg = status === "approved"
-        ? "✅ Votre mutation a été approuvée ! / تمت الموافقة على تنقلك!"
+        ? "🎉 Votre mutation a été approuvée ! Consultez votre tableau de bord. / تمت الموافقة على تنقلك! تحقق من لوحة التحكم."
         : "❌ Votre mutation a été rejetée. / تم رفض تنقلك.";
       transfer.participants.forEach((p) => {
         saveNotification({

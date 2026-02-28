@@ -144,11 +144,6 @@ export const tryAutoMatch = (newWish: TransferWish): TransferRequest | null => {
     updateWish(newWish.id, { matchedTransferId: transfer.id });
     updateWish(mutualMatch.id, { matchedTransferId: transfer.id });
 
-    // Notify participants
-    const msg = "🎉 Mutation mutuelle détectée ! Vérifiez vos mutations dans le tableau de bord.";
-    saveNotification({ id: crypto.randomUUID(), userId: newWish.userId, message: msg, createdAt: new Date().toISOString(), read: false });
-    saveNotification({ id: crypto.randomUUID(), userId: mutualMatch.userId, message: msg, createdAt: new Date().toISOString(), read: false });
-
     return transfer;
   }
 
@@ -176,11 +171,6 @@ export const tryAutoMatch = (newWish: TransferWish): TransferRequest | null => {
       updateWish(newWish.id, { matchedTransferId: transfer.id });
       updateWish(wishB.id, { matchedTransferId: transfer.id });
       updateWish(wishC.id, { matchedTransferId: transfer.id });
-
-      const msg = "🎉 Mutation cyclique détectée ! Vérifiez vos mutations dans le tableau de bord.";
-      saveNotification({ id: crypto.randomUUID(), userId: newWish.userId, message: msg, createdAt: new Date().toISOString(), read: false });
-      saveNotification({ id: crypto.randomUUID(), userId: wishB.userId, message: msg, createdAt: new Date().toISOString(), read: false });
-      saveNotification({ id: crypto.randomUUID(), userId: wishC.userId, message: msg, createdAt: new Date().toISOString(), read: false });
 
       return transfer;
     }

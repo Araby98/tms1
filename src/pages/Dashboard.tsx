@@ -14,7 +14,7 @@ const Dashboard = () => {
   const isAdmin = user?.role === "admin";
 
   const myTransfers = transfers.filter((tr) =>
-    tr.participants.some((p) => p.userId === user?.id)
+    tr.status === "approved" && tr.participants.some((p) => p.userId === user?.id)
   );
   const myWishes = wishes.filter((w) => w.userId === user?.id);
 
@@ -102,9 +102,12 @@ const Dashboard = () => {
                       </p>
                     </div>
                   </div>
-                  {w.matchedTransferId ? (
-                    <Badge variant="default">{t("dash.matched")}</Badge>
-                  ) : (
+                  {w.matchedTransferId ? (() => {
+                    const tr = transfers.find((t) => t.id === w.matchedTransferId);
+                    if (tr?.status === "approved") return <Badge variant="default">{t("dash.matched")}</Badge>;
+                    if (tr?.status === "rejected") return <Badge variant="destructive">{t("dash.rejected")}</Badge>;
+                    return <Badge variant="outline">{t("dash.pending")}</Badge>;
+                  })() : (
                     <Badge variant="outline">{t("dash.pending")}</Badge>
                   )}
                 </div>
