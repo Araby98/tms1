@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLang } from "@/contexts/LanguageContext";
 import { getWishes, saveWish, hasExistingWish, tryAutoMatch, deleteWish, updateWish } from "@/lib/storage";
-import { PROVINCES } from "@/lib/provinces";
+import { REGIONS, getProvincesByRegion } from "@/lib/provinces";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -14,10 +14,14 @@ import { Send, ArrowRight, ArrowLeftRight, Trash2, Edit2, X, Check } from "lucid
 const TransferRequest = () => {
   const { user } = useAuth();
   const { t } = useLang();
+  const [toRegion, setToRegion] = useState("");
   const [toProvince, setToProvince] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [editRegion, setEditRegion] = useState("");
   const [editProvince, setEditProvince] = useState("");
   const [, forceUpdate] = useState(0);
+
+  const availableProvinces = toRegion ? getProvincesByRegion(toRegion) : [];
 
   const myWishes = getWishes().filter((w) => w.userId === user?.id);
 
@@ -42,6 +46,7 @@ const TransferRequest = () => {
     } else {
       toast.success(t("dash.pending"));
     }
+    setToRegion("");
     setToProvince("");
     forceUpdate((n) => n + 1);
   };
@@ -78,13 +83,26 @@ const TransferRequest = () => {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label>{t("transfer.dest")}</Label>
-              <Select value={toProvince} onValueChange={setToProvince}>
+              <Label>{t("auth.region")}</Label>
+              <Select value={toRegion} onValueChange={(v) => { setToRegion(v); setToProvince(""); }}>
                 <SelectTrigger>
-                  <SelectValue placeholder={t("transfer.select_province")} />
+                  <SelectValue placeholder={t("auth.select_region")} />
                 </SelectTrigger>
                 <SelectContent>
-                  {PROVINCES.filter((p) => p !== user?.fromProvince).map((p) => (
+                  {REGIONS.map((r) => (
+                    <SelectItem key={r} value={r}>{r}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>{t("transfer.dest")}</Label>
+              <Select value={toProvince} onValueChange={setToProvince} disabled={!toRegion}>
+                <SelectTrigger>
+                  <SelectValue placeholder={toRegion ? t("transfer.select_province") : t("auth.choose_region_first")} />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableProvinces.filter((p) => p !== user?.fromProvince).map((p) => (
                     <SelectItem key={p} value={p}>{p}</SelectItem>
                   ))}
                 </SelectContent>
@@ -114,12 +132,22 @@ const TransferRequest = () => {
                       {editingId === w.id ? (
                         <div className="flex items-center gap-2">
                           <span className="text-sm">{w.fromProvince} →</span>
-                          <Select value={editProvince} onValueChange={setEditProvince}>
-                            <SelectTrigger className="h-8 w-40">
-                              <SelectValue />
+                          <Select value={editRegion} onValueChange={(v) => { setEditRegion(v); setEditProvince(""); }}>
+                            <SelectTrigger className="h-8 w-28">
+                              <SelectValue placeholder={t("auth.region")} />
                             </SelectTrigger>
                             <SelectContent>
-                              {PROVINCES.filter((p) => p !== user?.fromProvince).map((p) => (
+                              {REGIONS.map((r) => (
+                                <SelectItem key={r} value={r}>{r}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <Select value={editProvince} onValueChange={setEditProvince} disabled={!editRegion}>
+                            <SelectTrigger className="h-8 w-36">
+                              <SelectValue placeholder={t("auth.province")} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {(editRegion ? getProvincesByRegion(editRegion) : []).filter((p) => p !== user?.fromProvince).map((p) => (
                                 <SelectItem key={p} value={p}>{p}</SelectItem>
                               ))}
                             </SelectContent>
@@ -151,7 +179,7 @@ const TransferRequest = () => {
                         <Badge variant="outline">{t("dash.pending")}</Badge>
                         {editingId !== w.id && (
                           <>
-                            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { setEditingId(w.id); setEditProvince(w.toProvince); }}>
+                            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { setEditingId(w.id); setEditRegion(""); setEditProvince(w.toProvince); }}>
                               <Edit2 className="h-3.5 w-3.5" />
                             </Button>
                             <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => handleDelete(w.id)}>
