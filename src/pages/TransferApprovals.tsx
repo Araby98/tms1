@@ -24,8 +24,8 @@ const TransferApprovals = () => {
     const transfer = transfers.find((t) => t.id === id);
     if (transfer) {
       const msg = status === "approved"
-        ? "🎉 Votre mutation a été approuvée ! Consultez votre tableau de bord. / تمت الموافقة على تنقلك! تحقق من لوحة التحكم."
-        : "❌ Votre mutation a été rejetée. / تم رفض تنقلك.";
+        ? "🎉 Une correspondance a été trouvée pour votre demande de mutation ! Consultez votre tableau de bord. / تم العثور على تطابق لطلب تنقلك! تحقق من لوحة التحكم."
+        : "❌ Votre demande de mutation n'a pas abouti. / لم يتم قبول طلب تنقلك.";
       transfer.participants.forEach((p) => {
         saveNotification({
           id: crypto.randomUUID(),
