@@ -1,6 +1,8 @@
+import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLang } from "@/contexts/LanguageContext";
-import { getTransfers, getUsers, getWishes } from "@/lib/storage";
+import { apiGetTransfers, apiGetUsers, apiGetWishes } from "@/lib/api";
+import { User, TransferRequest, TransferWish } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeftRight, RotateCw, Users, Clock, ArrowRight } from "lucide-react";
@@ -8,15 +10,28 @@ import { ArrowLeftRight, RotateCw, Users, Clock, ArrowRight } from "lucide-react
 const Dashboard = () => {
   const { user } = useAuth();
   const { t } = useLang();
-  const transfers = getTransfers();
-  const users = getUsers();
-  const wishes = getWishes();
+  const [transfers, setTransfers] = useState<TransferRequest[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
+  const [wishes, setWishes] = useState<TransferWish[]>([]);
   const isAdmin = user?.role === "admin";
+
+  useEffect(() => {
+    const load = async () => {
+      const [tr, us, wi] = await Promise.all([
+        apiGetTransfers(),
+        apiGetUsers(),
+        apiGetWishes(user?.id),
+      ]);
+      setTransfers(tr);
+      setUsers(us);
+      setWishes(wi);
+    };
+    load();
+  }, [user?.id]);
 
   const myTransfers = transfers.filter((tr) =>
     tr.status === "approved" && tr.participants.some((p) => p.userId === user?.id)
   );
-  const myWishes = wishes.filter((w) => w.userId === user?.id);
 
   const getUserName = (id: string) => {
     const u = users.find((u) => u.id === id);
@@ -87,11 +102,11 @@ const Dashboard = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {myWishes.length === 0 ? (
+          {wishes.length === 0 ? (
             <p className="text-muted-foreground text-sm">{t("dash.no_requests")}</p>
           ) : (
             <div className="space-y-3">
-              {myWishes.map((w) => (
+              {wishes.map((w) => (
                 <div key={w.id} className="flex items-center justify-between p-3 rounded-lg border">
                   <div className="flex items-center gap-3">
                     <ArrowRight className="h-4 w-4 text-muted-foreground" />

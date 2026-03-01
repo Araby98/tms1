@@ -33,13 +33,13 @@ const Profile = () => {
     });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.firstName || !form.lastName || !form.email || !form.grade || !form.region || !form.fromProvince) {
       toast.error(t("common.fill_all"));
       return;
     }
-    const result = updateProfile(form);
+    const result = await updateProfile(form);
     if (result.success) {
       toast.success(t("profile.save"));
     } else {
