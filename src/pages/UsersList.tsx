@@ -1,5 +1,6 @@
-import { useState, useMemo } from "react";
-import { getUsers, getWishes } from "@/lib/storage";
+import { useState, useMemo, useEffect } from "react";
+import { apiGetUsers, apiGetWishes } from "@/lib/api";
+import { User, TransferWish } from "@/lib/types";
 import { useLang } from "@/contexts/LanguageContext";
 import { PROVINCES, REGIONS } from "@/lib/provinces";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,13 +13,21 @@ import { Button } from "@/components/ui/button";
 
 const UsersList = () => {
   const { t } = useLang();
-  const users = getUsers();
-  const wishes = getWishes();
-
+  const [users, setUsers] = useState<User[]>([]);
+  const [wishes, setWishes] = useState<TransferWish[]>([]);
   const [gradeFilter, setGradeFilter] = useState("all");
   const [regionFilter, setRegionFilter] = useState("all");
   const [originFilter, setOriginFilter] = useState("all");
   const [destFilter, setDestFilter] = useState("all");
+
+  useEffect(() => {
+    const load = async () => {
+      const [us, wi] = await Promise.all([apiGetUsers(), apiGetWishes()]);
+      setUsers(us);
+      setWishes(wi);
+    };
+    load();
+  }, []);
 
   const userDestinations = useMemo(() => {
     const map: Record<string, string[]> = {};

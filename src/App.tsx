@@ -6,7 +6,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { AppLayout } from "@/components/AppLayout";
-import { seedDefaultAdmin } from "@/lib/seedAdmin";
+
 import LandingPage from "./pages/LandingPage";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
@@ -20,8 +20,6 @@ import { ReactNode } from "react";
 
 const queryClient = new QueryClient();
 
-// Seed default admin on app start
-seedDefaultAdmin();
 
 const ProtectedRoute = ({ children }: { children: ReactNode }) => {
   const { user } = useAuth();

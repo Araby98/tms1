@@ -22,13 +22,13 @@ const Signup = () => {
 
   const availableProvinces = form.region ? getProvincesByRegion(form.region) : [];
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.grade || !form.region || !form.fromProvince) {
       toast.error(t("common.fill_all"));
       return;
     }
-    const result = signup(form);
+    const result = await signup(form);
     if (result.success) {
       toast.success(t("auth.signup_success"));
       navigate("/dashboard");

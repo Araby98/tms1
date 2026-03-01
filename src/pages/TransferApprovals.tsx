@@ -1,5 +1,6 @@
-import { useState } from "react";
-import { getTransfers, getUsers, updateTransfer, saveNotification } from "@/lib/storage";
+import { useState, useEffect } from "react";
+import { apiGetTransfers, apiGetUsers, apiUpdateTransfer, apiCreateNotification } from "@/lib/api";
+import { User, TransferRequest } from "@/lib/types";
 import { useLang } from "@/contexts/LanguageContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -10,34 +11,41 @@ import { toast } from "sonner";
 
 const TransferApprovals = () => {
   const { t } = useLang();
-  const [, forceUpdate] = useState(0);
-  const transfers = getTransfers();
-  const users = getUsers();
+  const [transfers, setTransfers] = useState<TransferRequest[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
+
+  const load = async () => {
+    const [tr, us] = await Promise.all([apiGetTransfers(), apiGetUsers()]);
+    setTransfers(tr);
+    setUsers(us);
+  };
+
+  useEffect(() => { load(); }, []);
 
   const getUserName = (id: string) => {
     const u = users.find((u) => u.id === id);
     return u ? `${u.firstName} ${u.lastName}` : t("common.unknown");
   };
 
-  const handleAction = (id: string, status: "approved" | "rejected") => {
-    updateTransfer(id, { status });
+  const handleAction = async (id: string, status: "approved" | "rejected") => {
+    await apiUpdateTransfer(id, { status });
     const transfer = transfers.find((t) => t.id === id);
     if (transfer) {
       const msg = status === "approved"
         ? "🎉 Une correspondance a été trouvée pour votre demande de mutation ! Consultez votre tableau de bord. / تم العثور على تطابق لطلب تنقلك! تحقق من لوحة التحكم."
         : "❌ Votre demande de mutation n'a pas abouti. / لم يتم قبول طلب تنقلك.";
-      transfer.participants.forEach((p) => {
-        saveNotification({
+      for (const p of transfer.participants) {
+        await apiCreateNotification({
           id: crypto.randomUUID(),
           userId: p.userId,
           message: msg,
           createdAt: new Date().toISOString(),
           read: false,
         });
-      });
+      }
     }
     toast.success(status === "approved" ? t("approvals.approved_success") : t("approvals.rejected_success"));
-    forceUpdate((n) => n + 1);
+    load();
   };
 
   const pendingTransfers = transfers.filter((t) => t.status === "pending");

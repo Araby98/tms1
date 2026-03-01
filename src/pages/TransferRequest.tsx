@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLang } from "@/contexts/LanguageContext";
-import { getWishes, saveWish, hasExistingWish, tryAutoMatch, deleteWish, updateWish } from "@/lib/storage";
+import { apiGetWishes, apiCreateWish, apiDeleteWish, apiUpdateWish } from "@/lib/api";
+import { TransferWish } from "@/lib/types";
 import { REGIONS, getProvincesByRegion } from "@/lib/provinces";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -19,49 +20,52 @@ const TransferRequest = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editRegion, setEditRegion] = useState("");
   const [editProvince, setEditProvince] = useState("");
-  const [, forceUpdate] = useState(0);
+  const [myWishes, setMyWishes] = useState<TransferWish[]>([]);
 
   const availableProvinces = toRegion ? getProvincesByRegion(toRegion) : [];
 
-  const myWishes = getWishes().filter((w) => w.userId === user?.id);
+  const loadWishes = async () => {
+    if (!user) return;
+    const wishes = await apiGetWishes(user.id);
+    setMyWishes(wishes);
+  };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => { loadWishes(); }, [user?.id]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!toProvince) return;
-    if (toProvince === user?.fromProvince) return;
-    if (hasExistingWish(user!.id, user!.fromProvince, toProvince)) return;
+    if (!toProvince || toProvince === user?.fromProvince) return;
 
-    const wish = {
-      id: crypto.randomUUID(),
-      userId: user!.id,
-      fromProvince: user!.fromProvince,
-      toProvince,
-      createdAt: new Date().toISOString(),
-    };
-    saveWish(wish);
+    try {
+      const { match } = await apiCreateWish({
+        userId: user!.id,
+        fromProvince: user!.fromProvince,
+        toProvince,
+      });
 
-    const match = tryAutoMatch(wish);
-    if (match) {
-      toast.success(match.type === "mutual" ? "🎉 Mutation mutuelle détectée !" : "🎉 Mutation cyclique détectée !");
-    } else {
-      toast.success(t("dash.pending"));
+      if (match) {
+        toast.success(match.type === "mutual" ? "🎉 Mutation mutuelle détectée !" : "🎉 Mutation cyclique détectée !");
+      } else {
+        toast.success(t("dash.pending"));
+      }
+      setToRegion("");
+      setToProvince("");
+      loadWishes();
+    } catch (err: any) {
+      toast.error(err.message);
     }
-    setToRegion("");
-    setToProvince("");
-    forceUpdate((n) => n + 1);
   };
 
-  const handleDelete = (id: string) => {
-    deleteWish(id);
-    forceUpdate((n) => n + 1);
+  const handleDelete = async (id: string) => {
+    await apiDeleteWish(id);
+    loadWishes();
   };
 
-  const handleEditSave = (wishId: string, fromProvince: string) => {
+  const handleEditSave = async (wishId: string, fromProvince: string) => {
     if (!editProvince || editProvince === fromProvince) return;
-    if (hasExistingWish(user!.id, fromProvince, editProvince)) return;
-    updateWish(wishId, { toProvince: editProvince });
+    await apiUpdateWish(wishId, { toProvince: editProvince });
     setEditingId(null);
-    forceUpdate((n) => n + 1);
+    loadWishes();
   };
 
   return (
