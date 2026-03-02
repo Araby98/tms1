@@ -10,7 +10,9 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "server": "npx tsx server.ts",
+    "dev:full": "concurrently \"npm run dev\" \"npm run server\""
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
@@ -47,6 +49,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
+    "concurrently": "^9.2.1",
     "cors": "^2.8.6",
     "date-fns": "^3.6.0",
     "embla-carousel-react": "^8.6.0",
