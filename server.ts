@@ -316,7 +316,7 @@ app.put("/api/notifications/mark-read", async (req, res) => {
 const PORT = 3001;
 
 initDB().then(() => {
-  app.listen(PORT, () => {
+  app.listen(PORT, "0.0.0.0", () => {
     console.log(`✅ Backend running at http://localhost:${PORT}`);
     console.log(`🐬 Connected to MySQL database: ${process.env.DB_NAME || "mouvement"}`);
   });
